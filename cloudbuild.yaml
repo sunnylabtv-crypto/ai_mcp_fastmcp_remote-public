@@ -1,0 +1,43 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'asia-northeast3-docker.pkg.dev/${PROJECT_ID}/mcp-server-repo/sales-assistant-mcp:${COMMIT_SHA}'
+      - '-t'
+      - 'asia-northeast3-docker.pkg.dev/${PROJECT_ID}/mcp-server-repo/sales-assistant-mcp:latest'
+      - '.'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'asia-northeast3-docker.pkg.dev/${PROJECT_ID}/mcp-server-repo/sales-assistant-mcp:${COMMIT_SHA}'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'asia-northeast3-docker.pkg.dev/${PROJECT_ID}/mcp-server-repo/sales-assistant-mcp:latest'
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'sales-assistant-mcp'
+      - '--image=asia-northeast3-docker.pkg.dev/${PROJECT_ID}/mcp-server-repo/sales-assistant-mcp:${COMMIT_SHA}'
+      - '--region=asia-northeast3'
+      - '--platform=managed'
+      - '--port=8000'
+      - '--allow-unauthenticated'
+      - '--memory=1Gi'
+      - '--timeout=300'
+      - '--set-env-vars=MCP_MODE=sse,HOST=0.0.0.0,GMAIL_CREDENTIALS_PATH=/secrets/gmail-creds/credentials.json,GMAIL_TOKEN_PATH=/secrets/gmail-token/token.json,SF_JWT_KEY=/secrets/sf-key/sf.key,SF_USERNAME=your-sf-user@example.com,SF_LOGIN_URL=https://your-instance.my.salesforce.com'
+      - '--set-secrets=OPENAI_API_KEY=openai-api-key:latest,SF_CLIENT_ID=sf-client-id:latest,/secrets/gmail-token/token.json=gmail-token:latest,/secrets/gmail-creds/credentials.json=gmail-credentials:latest,/secrets/sf-key/sf.key=sf-jwt-key:latest'
+
+
+images:
+  - 'asia-northeast3-docker.pkg.dev/${PROJECT_ID}/mcp-server-repo/sales-assistant-mcp:${COMMIT_SHA}'
+  - 'asia-northeast3-docker.pkg.dev/${PROJECT_ID}/mcp-server-repo/sales-assistant-mcp:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY

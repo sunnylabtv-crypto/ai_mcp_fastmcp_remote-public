@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  mcp-server:
+    build: .
+    container_name: sales-assistant-mcp
+    ports:
+      - "8000:8000"
+    environment:
+      - MCP_MODE=sse
+      - HOST=0.0.0.0
+      - PORT=8000
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      # VectorDB (ChromaDB) 설정
+      - CHROMA_PERSIST_DIR=/app/data/chromadb
+      - COLLECTION_NAME=it_helpdesk_docs
+    volumes:
+      - ./credentials:/app/credentials:ro
+      - ./.env:/app/.env:ro
+      - ./logs:/app/logs
+      # ChromaDB 영구 저장소 (컨테이너 재시작해도 데이터 유지)
+      - chromadb_data:/app/data/chromadb
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/sse"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  chromadb_data:
+    driver: local
